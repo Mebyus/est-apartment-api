@@ -1,6 +1,6 @@
 .PHONY: build
 build:
-	go build cmd/omp-demo-api/main.go
+	go build -o bin/retranslator ./cmd/omp-demo-api
 
 .PHONY: test
 test:
