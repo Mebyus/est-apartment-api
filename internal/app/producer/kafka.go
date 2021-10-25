@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ozonmp/omp-demo-api/internal/app/repo"
 	"github.com/ozonmp/omp-demo-api/internal/app/sender"
 	"github.com/ozonmp/omp-demo-api/internal/model"
 
@@ -20,6 +21,7 @@ type producer struct {
 	timeout time.Duration
 
 	sender sender.EventSender
+	repo   repo.EventRepo
 	events <-chan model.ApartmentEvent
 
 	workerPool *workerpool.WorkerPool
@@ -30,12 +32,12 @@ type producer struct {
 
 type Config struct {
 	ProducersNumber uint64
+	Repo            repo.EventRepo
 	Sender          sender.EventSender
 	Events          <-chan model.ApartmentEvent
 	WorkerPool      *workerpool.WorkerPool
 }
 
-// todo for students: add repo
 func NewKafkaProducer(config Config) Producer {
 	wg := &sync.WaitGroup{}
 	done := make(chan bool)
@@ -43,10 +45,23 @@ func NewKafkaProducer(config Config) Producer {
 	return &producer{
 		n:          config.ProducersNumber,
 		sender:     config.Sender,
+		repo:       config.Repo,
 		events:     config.Events,
 		workerPool: config.WorkerPool,
 		wg:         wg,
 		done:       done,
+	}
+}
+
+func (p *producer) handle(event model.ApartmentEvent) {
+	if err := p.sender.Send(&event); err != nil {
+		p.workerPool.Submit(func() {
+			// ...
+		})
+	} else {
+		p.workerPool.Submit(func() {
+			// ...
+		})
 	}
 }
 
@@ -55,15 +70,7 @@ func (p *producer) produce() {
 	for {
 		select {
 		case event := <-p.events:
-			if err := p.sender.Send(&event); err != nil {
-				p.workerPool.Submit(func() {
-					// ...
-				})
-			} else {
-				p.workerPool.Submit(func() {
-					// ...
-				})
-			}
+			p.handle(event)
 		case <-p.done:
 			return
 		}
