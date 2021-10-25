@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-
 	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	cfg := retranslator.Config{
 		ChannelSize:   512,
@@ -23,7 +23,7 @@ func main() {
 	retranslator := retranslator.NewRetranslator(cfg)
 	retranslator.Start()
 
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
+	// make a graceful shutdown
 	<-sigs
+	retranslator.Close()
 }
