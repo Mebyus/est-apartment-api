@@ -20,7 +20,7 @@ type producer struct {
 	timeout time.Duration
 
 	sender sender.EventSender
-	events <-chan model.SubdomainEvent
+	events <-chan model.ApartmentEvent
 
 	workerPool *workerpool.WorkerPool
 
@@ -31,7 +31,7 @@ type producer struct {
 type Config struct {
 	ProducersNumber uint64
 	Sender          sender.EventSender
-	Events          <-chan model.SubdomainEvent
+	Events          <-chan model.ApartmentEvent
 	WorkerPool      *workerpool.WorkerPool
 }
 

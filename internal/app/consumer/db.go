@@ -16,7 +16,7 @@ type Consumer interface {
 
 type consumer struct {
 	n      uint64
-	events chan<- model.SubdomainEvent
+	events chan<- model.ApartmentEvent
 
 	repo repo.EventRepo
 
@@ -29,7 +29,7 @@ type consumer struct {
 
 type Config struct {
 	ConsumersNumber uint64
-	Events          chan<- model.SubdomainEvent
+	Events          chan<- model.ApartmentEvent
 	Repo            repo.EventRepo
 	BatchSize       uint64
 	Interval        time.Duration
