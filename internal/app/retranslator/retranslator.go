@@ -48,13 +48,15 @@ func NewRetranslator(cfg Config) Retranslator {
 		Repo:            cfg.Repo,
 		Events:          events,
 	}
+	producerConfig := producer.Config{
+		ProducersNumber: cfg.ProducerCount,
+		Sender:          cfg.Sender,
+		Events:          events,
+		WorkerPool:      workerPool,
+	}
 
 	consumer := consumer.NewDBConsumer(consumerConfig)
-	producer := producer.NewKafkaProducer(
-		cfg.ProducerCount,
-		cfg.Sender,
-		events,
-		workerPool)
+	producer := producer.NewKafkaProducer(producerConfig)
 
 	return &retranslator{
 		events:     events,

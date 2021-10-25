@@ -28,49 +28,52 @@ type producer struct {
 	done chan bool
 }
 
-// todo for students: add repo
-func NewKafkaProducer(
-	n uint64,
-	sender sender.EventSender,
-	events <-chan model.SubdomainEvent,
-	workerPool *workerpool.WorkerPool,
-) Producer {
+type Config struct {
+	ProducersNumber uint64
+	Sender          sender.EventSender
+	Events          <-chan model.SubdomainEvent
+	WorkerPool      *workerpool.WorkerPool
+}
 
+// todo for students: add repo
+func NewKafkaProducer(config Config) Producer {
 	wg := &sync.WaitGroup{}
 	done := make(chan bool)
 
 	return &producer{
-		n:          n,
-		sender:     sender,
-		events:     events,
-		workerPool: workerPool,
+		n:          config.ProducersNumber,
+		sender:     config.Sender,
+		events:     config.Events,
+		workerPool: config.WorkerPool,
 		wg:         wg,
 		done:       done,
+	}
+}
+
+func (p *producer) produce() {
+	defer p.wg.Done()
+	for {
+		select {
+		case event := <-p.events:
+			if err := p.sender.Send(&event); err != nil {
+				p.workerPool.Submit(func() {
+					// ...
+				})
+			} else {
+				p.workerPool.Submit(func() {
+					// ...
+				})
+			}
+		case <-p.done:
+			return
+		}
 	}
 }
 
 func (p *producer) Start() {
 	for i := uint64(0); i < p.n; i++ {
 		p.wg.Add(1)
-		go func() {
-			defer p.wg.Done()
-			for {
-				select {
-				case event := <-p.events:
-					if err := p.sender.Send(&event); err != nil {
-						p.workerPool.Submit(func() {
-							// ...
-						})
-					} else {
-						p.workerPool.Submit(func() {
-							// ...
-						})
-					}
-				case <-p.done:
-					return
-				}
-			}
-		}()
+		go p.produce()
 	}
 }
 
