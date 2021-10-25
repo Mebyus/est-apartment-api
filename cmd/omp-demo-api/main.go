@@ -1,9 +1,11 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/ozonmp/omp-demo-api/internal/app/retranslator"
 )
@@ -13,17 +15,19 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	cfg := retranslator.Config{
-		ChannelSize:   512,
-		ConsumerCount: 2,
-		ConsumeSize:   10,
-		ProducerCount: 28,
-		WorkerCount:   2,
+		ChannelSize:     512,
+		ConsumerCount:   2,
+		ConsumeSize:     10,
+		ConsumeInterval: 10 * time.Second,
+		ProducerCount:   28,
+		WorkerCount:     2,
 	}
 
 	retranslator := retranslator.NewRetranslator(cfg)
 	retranslator.Start()
 
 	// make a graceful shutdown
-	<-sigs
+	receivedSignal := <-sigs
 	retranslator.Close()
+	log.Printf("Stopped by signal: (%d) %v", receivedSignal, receivedSignal)
 }
