@@ -24,6 +24,9 @@ type Config struct {
 	ConsumeSize     uint64
 	ConsumeInterval time.Duration
 
+	CleanupSize     uint64
+	CleanupInterval time.Duration
+
 	ProducerCount uint64
 	WorkerCount   int
 
@@ -54,6 +57,8 @@ func NewRetranslator(cfg Config) Retranslator {
 		Repo:            cfg.Repo,
 		Events:          events,
 		WorkerPool:      workerPool,
+		Interval:        cfg.CleanupInterval,
+		BatchSize:       cfg.CleanupSize,
 	}
 
 	consumer := consumer.NewDBConsumer(consumerConfig)

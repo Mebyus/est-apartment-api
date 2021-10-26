@@ -5,5 +5,5 @@ import (
 )
 
 type EventSender interface {
-	Send(apartment *model.ApartmentEvent) error
+	Send(apartment model.ApartmentEvent) error
 }
