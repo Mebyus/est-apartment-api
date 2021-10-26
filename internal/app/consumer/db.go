@@ -29,25 +29,27 @@ type consumer struct {
 
 type Config struct {
 	ConsumersNumber uint64
-	Events          chan<- model.ApartmentEvent
+	ChannelSize     uint64
 	Repo            repo.EventRepo
 	BatchSize       uint64
 	Interval        time.Duration
 }
 
-func NewDBConsumer(config Config) Consumer {
+func NewDBConsumer(config Config) (Consumer, <-chan model.ApartmentEvent) {
 	wg := &sync.WaitGroup{}
 	done := make(chan bool)
+	events := make(chan model.ApartmentEvent, config.ChannelSize)
 
 	return &consumer{
-		n:         config.ConsumersNumber,
-		batchSize: config.BatchSize,
-		interval:  config.Interval,
-		repo:      config.Repo,
-		events:    config.Events,
-		wg:        wg,
-		done:      done,
-	}
+			n:         config.ConsumersNumber,
+			batchSize: config.BatchSize,
+			interval:  config.Interval,
+			repo:      config.Repo,
+			events:    events,
+			wg:        wg,
+			done:      done,
+		},
+		events
 }
 
 func (c *consumer) consume() {
@@ -80,4 +82,5 @@ func (c *consumer) Start() {
 func (c *consumer) Close() {
 	close(c.done)
 	c.wg.Wait()
+	close(c.events)
 }

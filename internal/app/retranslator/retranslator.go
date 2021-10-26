@@ -3,13 +3,11 @@ package retranslator
 import (
 	"time"
 
+	"github.com/ozonmp/omp-demo-api/internal/app/cleaner"
 	"github.com/ozonmp/omp-demo-api/internal/app/consumer"
 	"github.com/ozonmp/omp-demo-api/internal/app/producer"
 	"github.com/ozonmp/omp-demo-api/internal/app/repo"
 	"github.com/ozonmp/omp-demo-api/internal/app/sender"
-	"github.com/ozonmp/omp-demo-api/internal/model"
-
-	"github.com/gammazero/workerpool"
 )
 
 type Retranslator interface {
@@ -28,57 +26,60 @@ type Config struct {
 	CleanupInterval time.Duration
 
 	ProducerCount uint64
-	WorkerCount   int
+	WorkerCount   uint64
 
 	Repo   repo.EventRepo
 	Sender sender.EventSender
 }
 
 type retranslator struct {
-	events     chan model.ApartmentEvent
-	consumer   consumer.Consumer
-	producer   producer.Producer
-	workerPool *workerpool.WorkerPool
+	consumer consumer.Consumer
+	producer producer.Producer
+	cleaner  cleaner.Cleaner
 }
 
 func NewRetranslator(cfg Config) Retranslator {
-	events := make(chan model.ApartmentEvent, cfg.ChannelSize)
-	workerPool := workerpool.New(cfg.WorkerCount)
 	consumerConfig := consumer.Config{
 		ConsumersNumber: cfg.ConsumerCount,
 		BatchSize:       cfg.ConsumeSize,
 		Interval:        cfg.ConsumeInterval,
 		Repo:            cfg.Repo,
-		Events:          events,
 	}
+	consumer, events := consumer.NewDBConsumer(consumerConfig)
+
 	producerConfig := producer.Config{
 		ProducersNumber: cfg.ProducerCount,
 		Sender:          cfg.Sender,
-		Repo:            cfg.Repo,
 		Events:          events,
-		WorkerPool:      workerPool,
-		Interval:        cfg.CleanupInterval,
 		BatchSize:       cfg.CleanupSize,
 	}
+	producer, byproductChannels := producer.NewKafkaProducer(producerConfig)
 
-	consumer := consumer.NewDBConsumer(consumerConfig)
-	producer := producer.NewKafkaProducer(producerConfig)
+	cleanerConfig := cleaner.Config{
+		Repo:             cfg.Repo,
+		WorkerCount:      cfg.WorkerCount,
+		Interval:         cfg.CleanupInterval,
+		BatchSize:        cfg.CleanupSize,
+		EventIDsToUnlock: byproductChannels.EventIDsToUnlock,
+		EventIDsToRemove: byproductChannels.EventIDsToRemove,
+	}
+	cleaner := cleaner.NewCleaner(cleanerConfig)
 
 	return &retranslator{
-		events:     events,
-		consumer:   consumer,
-		producer:   producer,
-		workerPool: workerPool,
+		consumer: consumer,
+		producer: producer,
+		cleaner:  cleaner,
 	}
 }
 
 func (r *retranslator) Start() {
 	r.producer.Start()
 	r.consumer.Start()
+	r.cleaner.Start()
 }
 
 func (r *retranslator) Close() {
 	r.consumer.Close()
 	r.producer.Close()
-	r.workerPool.StopWait()
+	r.cleaner.Close()
 }

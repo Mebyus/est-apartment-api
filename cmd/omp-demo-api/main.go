@@ -21,6 +21,8 @@ func main() {
 		ConsumeInterval: 10 * time.Second,
 		ProducerCount:   28,
 		WorkerCount:     2,
+		CleanupSize:     10,
+		CleanupInterval: time.Second,
 	}
 
 	retranslator := retranslator.NewRetranslator(cfg)

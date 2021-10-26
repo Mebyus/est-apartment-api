@@ -12,7 +12,7 @@ install-mockgen:
 
 .PHONY: test
 test: tidy download generate
-	go test -v ./...
+	go test -timeout 10s -race -v ./...
 
 .PHONY: tidy
 tidy:

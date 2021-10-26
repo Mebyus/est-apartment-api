@@ -8,7 +8,7 @@ import (
 	"github.com/ozonmp/omp-demo-api/internal/mocks"
 )
 
-func TestStart(t *testing.T) {
+func TestEmptyStartAndClose(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	repo := mocks.NewMockEventRepo(ctrl)
@@ -17,14 +17,20 @@ func TestStart(t *testing.T) {
 	repo.EXPECT().Lock(gomock.Any()).AnyTimes()
 
 	cfg := Config{
-		ChannelSize:     512,
-		ConsumerCount:   2,
-		ConsumeSize:     10,
-		ConsumeInterval: 10 * time.Second,
-		ProducerCount:   2,
-		WorkerCount:     2,
-		Repo:            repo,
-		Sender:          sender,
+		ChannelSize: 512,
+
+		ConsumerCount: 2,
+		ProducerCount: 2,
+		WorkerCount:   2,
+
+		ConsumeSize: 10,
+		CleanupSize: 10,
+
+		ConsumeInterval: time.Second,
+		CleanupInterval: time.Second,
+
+		Repo:   repo,
+		Sender: sender,
 	}
 
 	retranslator := NewRetranslator(cfg)
