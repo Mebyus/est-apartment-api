@@ -104,7 +104,8 @@ func (p *producer) produce() {
 			//
 			// TODO
 			// Potentially it's a huge problem if events channel is not closed at this point.
-			// In that case goroutine will get stuck in endless waiting
+			// In that case goroutine will get stuck in endless waiting. Here we can add a
+			// timeout timer via select, that will lead to dropping some unhandled events though.
 			for event := range p.events {
 				p.handle(event)
 			}

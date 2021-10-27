@@ -23,6 +23,11 @@ func main() {
 		WorkerCount:     2,
 		CleanupSize:     10,
 		CleanupInterval: time.Second,
+
+		// TODO
+		// Add stubs for fields below, without them main will panic
+		Repo:   nil,
+		Sender: nil,
 	}
 
 	retranslator := retranslator.NewRetranslator(cfg)

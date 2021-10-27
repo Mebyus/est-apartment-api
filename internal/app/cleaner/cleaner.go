@@ -70,6 +70,12 @@ func (c *cleaner) flushUnlock(eventIDs []uint64) {
 		err := c.repo.Unlock(eventIDs)
 		if err != nil {
 			log.Printf("Failed to unlock events %v: %v", eventIDs, err)
+			
+			// TODO
+			// Should make something smart with this error instead of just printing it.
+			// Maybe we can try to add some kind of second queue and worker pull
+			// for retries with limited number of attempts.
+			// Same goes for remove operation.
 		}
 	})
 }
